@@ -106,6 +106,8 @@ typedef struct
     float FontSize;
 } nkFont_t;
 
+
+
 /***************************************************************
 ** MARK: FUNCTION DEFS
 ***************************************************************/
@@ -116,7 +118,8 @@ void nkDraw_End(nkDrawContext_t *context);
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color);
 
-float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y);
+void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y);
+void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h);
 
 bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
 

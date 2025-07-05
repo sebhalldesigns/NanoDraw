@@ -207,7 +207,7 @@ void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
     context->CurrentColor[3] = color.a;
 }
 
-float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y, float scale)
+void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y, float scale)
 {
 
     if (
@@ -216,10 +216,10 @@ float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, fl
     ) 
     {
         FlushContext(context);
+
+        context->CurrentDrawMode = GL_TRIANGLES;
+        context->CurrentShader = context->TextureShaderProgram;
     }
-    
-    context->CurrentDrawMode = GL_TRIANGLES;
-    context->CurrentShader = context->TextureShaderProgram;
     
     // --- 2. Prepare for drawing ---
     glActiveTexture(GL_TEXTURE0);
@@ -262,12 +262,55 @@ float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, fl
             v[3] = (nkVertex_t){ q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
             v[4] = (nkVertex_t){ q.x1, q.y1, r, g, b, a, q.s1, q.t1 };
             v[5] = (nkVertex_t){ q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
-            
+
             context->VertexCount += 6;
         }
     }
     
-    return pen_x - x; // Return total width
+}
+
+void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
+{
+    // --- 1. State Management ---
+    // Check if the current batch is for something else (like textured text).
+    // If so, flush the old batch before starting this new one.
+    if (context->CurrentDrawMode != GL_TRIANGLES || context->CurrentShader != context->ShapeShaderProgram) 
+    {
+        FlushContext(context);
+        
+        // Set the new state for this batch of rectangles
+        context->CurrentDrawMode = GL_TRIANGLES;
+        context->CurrentShader = context->ShapeShaderProgram;
+    }
+
+    // --- 2. Check for buffer overflow ---
+    // Ensure there's enough space for 6 vertices. If not, flush.
+    if (context->VertexCount + 6 > VERTEX_BUFFER_SIZE) {
+        FlushContext(context);
+    }
+    
+    // --- 3. Generate Vertices ---
+    const float r = context->CurrentColor[0];
+    const float g = context->CurrentColor[1];
+    const float b = context->CurrentColor[2];
+    const float a = context->CurrentColor[3];
+    
+    const float x1 = x + w;
+    const float y1 = y + h;
+
+    // Get a pointer to the next available slot in the CPU vertex buffer
+    nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
+
+    // Create the quad (2 triangles). UVs are (0,0) as they are unused.
+    v[0] = (nkVertex_t){ x,  y,  r, g, b, a, 0, 0 };
+    v[1] = (nkVertex_t){ x1, y,  r, g, b, a, 0, 0 };
+    v[2] = (nkVertex_t){ x,  y1, r, g, b, a, 0, 0 };
+
+    v[3] = (nkVertex_t){ x1, y,  r, g, b, a, 0, 0 };
+    v[4] = (nkVertex_t){ x1, y1, r, g, b, a, 0, 0 };
+    v[5] = (nkVertex_t){ x,  y1, r, g, b, a, 0, 0 };
+    
+    context->VertexCount += 6;
 }
 
 /***************************************************************
