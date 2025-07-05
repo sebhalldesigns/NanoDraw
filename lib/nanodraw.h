@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#define VERTEX_BUFFER_SIZE (65536U)
+#define VERTEX_BUFFER_SIZE (255U)
 
 /***************************************************************
 ** MARK: TYPEDEFS
@@ -43,6 +43,34 @@ typedef struct
     float r, g, b, a;
     float u, v;
 } nkVertex_t;
+
+typedef struct 
+{   
+    union
+    {
+        float r;
+        float x;
+    };
+
+    union
+    {
+        float g;
+        float y;
+    };
+
+    union
+    {
+        float b;
+        float z;
+    };
+
+    union
+    {
+        float a;
+        float w;
+    };
+    
+} nkVector4_t;
 
 typedef struct nkDrawContext_t
 {
@@ -58,8 +86,16 @@ typedef struct nkDrawContext_t
     size_t VertexCount;
     GLenum CurrentDrawMode;
     GLuint CurrentTexture;
+    GLuint CurrentShader;
 
     float CurrentColor[4];
+
+    uint32_t ShapeProjMatLoc;
+    uint32_t TextureProjMatLoc;
+
+    uint32_t FontCharWidth;
+    uint32_t FontCharHeight;
+
 
 } nkDrawContext_t;
 
@@ -69,6 +105,12 @@ typedef struct nkDrawContext_t
 
 bool nkDrawContext_Create(nkDrawContext_t *context); 
 
+void nkDrawContext_BeginFrame(nkDrawContext_t *context, float width, float height);
+void nkDrawContext_EndFrame(nkDrawContext_t *context);
+
+void nkDrawContext_SetColor(nkDrawContext_t *context, nkVector4_t color);
+
+float nkDrawContext_DrawText(nkDrawContext_t* context, const char* text, float x, float y, float scale);
 
 #ifdef __cplusplus
 }
