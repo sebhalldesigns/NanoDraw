@@ -65,7 +65,9 @@ unsigned char unpacked_font_data[FONT_ATLAS_WIDTH_PX * FONT_CHAR_HEIGHT_PX];
 ***************************************************************/
 
 static GLuint CreateShader(const char* vertSrc, const char* fragSrc);
-static void FlushContext(nkDrawContext_t* ctx);
+static void FlushBuffer(nkDrawContext_t* ctx, nkDrawBuffer_t *buffer);
+
+static size_t drawCount = 0;
 
 /***************************************************************
 ** MARK: PUBLIC FUNCTIONS
@@ -107,11 +109,11 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
 
 
     // --- 3. Create Vertex Buffer and Vertex Array Object ---
-    glGenVertexArrays(1, &context->VAO);
-    glGenBuffers(1, &context->VBO);
+    glGenVertexArrays(1, &context->ShapeBuffer.VAO);
+    glGenBuffers(1, &context->ShapeBuffer.VBO);
 
-    glBindVertexArray(context->VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, context->VBO);
+    glBindVertexArray(context->ShapeBuffer.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, context->ShapeBuffer.VBO);
 
     // Specify the layout of our ndVertex_t struct
     // Position attribute (2 floats)
@@ -129,7 +131,32 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
     // be updating this buffer's content frequently.
     glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE * sizeof(nkVertex_t), NULL, GL_DYNAMIC_DRAW);
 
-    
+    // Unbind to prevent accidental modification
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+      glGenVertexArrays(1, &context->TextureBuffer.VAO);
+    glGenBuffers(1, &context->TextureBuffer.VBO);
+
+    glBindVertexArray(context->TextureBuffer.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, context->TextureBuffer.VBO);
+
+    // Specify the layout of our ndVertex_t struct
+    // Position attribute (2 floats)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, x));
+    glEnableVertexAttribArray(0);
+    // Color attribute (4 floats)
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, r));
+    glEnableVertexAttribArray(1);
+    // Texture coordinate attribute (2 floats)
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, u));
+    glEnableVertexAttribArray(2);
+
+    // Allocate the buffer on the GPU. We pass NULL for the data because we're not uploading
+    // anything yet, but we give it the full size. GL_DYNAMIC_DRAW is a hint that we'll
+    // be updating this buffer's content frequently.
+    glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE * sizeof(nkVertex_t), NULL, GL_DYNAMIC_DRAW);
+
     // Unbind to prevent accidental modification
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -138,9 +165,16 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // --- 5. Set Initial State ---
-    context->VertexCount = 0;
+    context->ShapeBuffer.VertexCount = 0;
+    context->TextureBuffer.VertexCount = 0;
     context->CurrentDrawMode = GL_TRIANGLES; // Default to triangles
     context->CurrentShader = context->ShapeShaderProgram;
+    context->ShapeBuffer.ShaderProgram = context->ShapeShaderProgram;
+    context->TextureBuffer.ShaderProgram = context->TextureShaderProgram;
+    context->ShapeBuffer.DrawMode = GL_TRIANGLES;   
+    context->TextureBuffer.DrawMode = GL_TRIANGLES;
+
+    context->CurrentBuffer = &context->ShapeBuffer; // Default to shape buffer
 
     nkDraw_SetColor(context, (nkVector4_t){1.0f, 1.0f, 1.0f, 1.0f}); // Default color white
 
@@ -151,8 +185,9 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
 void nkDraw_Begin(nkDrawContext_t *context, float width, float height)
 {
 
-    context->VertexCount = 0; // Reset vertex count for the new frame
-
+    context->ShapeBuffer.VertexCount = 0; // Reset vertex count for the new frame
+    context->TextureBuffer.VertexCount = 0; // Reset vertex count for the new frame
+    
     /* set to invalid values to force a state change */
     context->CurrentDrawMode = 0; 
     context->CurrentShader = 0;
@@ -185,18 +220,27 @@ void nkDraw_Begin(nkDrawContext_t *context, float width, float height)
     // Unbind the program to be tidy.
     glUseProgram(0);
 
+    drawCount = 0;
+
 
 }
 
 void nkDraw_End(nkDrawContext_t *context)
 {
     // If we have any vertices to draw, flush them.
-    if (context->VertexCount > 0) {
-        FlushContext(context);
+
+    if (context->ShapeBuffer.VertexCount > 0) {
+        FlushBuffer(context, &context->ShapeBuffer);
+    }
+
+    if (context->TextureBuffer.VertexCount > 0) {
+        FlushBuffer(context, &context->TextureBuffer);
     }
 
     glBindVertexArray(0);
     glUseProgram(0);
+
+    printf("NanoDraw Ended. Total Draw Calls: %zu\n", drawCount);
 }
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
@@ -207,19 +251,8 @@ void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
     context->CurrentColor[3] = color.a;
 }
 
-void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y, float scale)
+void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y)
 {
-
-    if (
-            (context->CurrentDrawMode != GL_TRIANGLES) 
-        ||  (context->CurrentShader != context->TextureShaderProgram)
-    ) 
-    {
-        FlushContext(context);
-
-        context->CurrentDrawMode = GL_TRIANGLES;
-        context->CurrentShader = context->TextureShaderProgram;
-    }
     
     // --- 2. Prepare for drawing ---
     glActiveTexture(GL_TEXTURE0);
@@ -248,12 +281,12 @@ void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, flo
                                &q, 1); // 1 for opengl texture coordinates
 
             // Check for buffer overflow
-            if (context->VertexCount + 6 > VERTEX_BUFFER_SIZE) {
-                FlushContext(context);
+            if (context->TextureBuffer.VertexCount + 6 > VERTEX_BUFFER_SIZE) {
+                FlushBuffer(context, &context->TextureBuffer);
                 glBindTexture(GL_TEXTURE_2D, font->AtlasTexture);
             }
 
-            nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
+            nkVertex_t* v = &context->TextureBuffer.VertexBuffer[context->TextureBuffer.VertexCount];
 
             v[0] = (nkVertex_t){ q.x0, q.y0, r, g, b, a, q.s0, q.t0 };
             v[1] = (nkVertex_t){ q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
@@ -263,7 +296,7 @@ void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, flo
             v[4] = (nkVertex_t){ q.x1, q.y1, r, g, b, a, q.s1, q.t1 };
             v[5] = (nkVertex_t){ q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
 
-            context->VertexCount += 6;
+            context->TextureBuffer.VertexCount += 6;
         }
     }
     
@@ -271,22 +304,11 @@ void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, flo
 
 void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
 {
-    // --- 1. State Management ---
-    // Check if the current batch is for something else (like textured text).
-    // If so, flush the old batch before starting this new one.
-    if (context->CurrentDrawMode != GL_TRIANGLES || context->CurrentShader != context->ShapeShaderProgram) 
-    {
-        FlushContext(context);
-        
-        // Set the new state for this batch of rectangles
-        context->CurrentDrawMode = GL_TRIANGLES;
-        context->CurrentShader = context->ShapeShaderProgram;
-    }
 
     // --- 2. Check for buffer overflow ---
     // Ensure there's enough space for 6 vertices. If not, flush.
-    if (context->VertexCount + 6 > VERTEX_BUFFER_SIZE) {
-        FlushContext(context);
+    if (context->ShapeBuffer.VertexCount + 6 > VERTEX_BUFFER_SIZE) {
+        FlushBuffer(context, &context->ShapeBuffer);
     }
     
     // --- 3. Generate Vertices ---
@@ -299,7 +321,7 @@ void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
     const float y1 = y + h;
 
     // Get a pointer to the next available slot in the CPU vertex buffer
-    nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
+    nkVertex_t* v = &context->ShapeBuffer.VertexBuffer[context->ShapeBuffer.VertexCount];
 
     // Create the quad (2 triangles). UVs are (0,0) as they are unused.
     v[0] = (nkVertex_t){ x,  y,  r, g, b, a, 0, 0 };
@@ -310,7 +332,7 @@ void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
     v[4] = (nkVertex_t){ x1, y1, r, g, b, a, 0, 0 };
     v[5] = (nkVertex_t){ x,  y1, r, g, b, a, 0, 0 };
     
-    context->VertexCount += 6;
+    context->ShapeBuffer.VertexCount += 6;
 }
 
 /***************************************************************
@@ -373,26 +395,24 @@ static GLuint CreateShader(const char* vertSrc, const char* fragSrc)
     return program;
 }
 
-static void FlushContext(nkDrawContext_t* context) 
+static void FlushBuffer(nkDrawContext_t* context, nkDrawBuffer_t *buffer)
 {
-
-    if (context->VertexCount == 0) 
+    if (buffer->VertexCount == 0) 
     {
-        return;
+        return; // Nothing to draw
     }
 
-    
-    glBindBuffer(GL_ARRAY_BUFFER, context->VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->VBO);
     glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE * sizeof(nkVertex_t), NULL, GL_DYNAMIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, context->VertexCount * sizeof(nkVertex_t), context->VertexBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, buffer->VertexCount * sizeof(nkVertex_t), buffer->VertexBuffer);
 
-    // Use the primitive mode that was being batched
-    glUseProgram(context->CurrentShader);
-    glBindVertexArray(context->VAO);
-    glDrawArrays(context->CurrentDrawMode, 0, context->VertexCount);
+    // Use the current shader program
+    glUseProgram(buffer->ShaderProgram);
+    glBindVertexArray(buffer->VAO);
+    glDrawArrays(buffer->DrawMode, 0, buffer->VertexCount);
 
-    //printf("Drawing %zu vertices with mode %d using shader %d\n", context->VertexCount, context->CurrentDrawMode, context->CurrentShader);
+    drawCount++;
 
-    // Reset the counter for the next batch
-    context->VertexCount = 0;
+    // Reset the vertex count for the next batch
+    buffer->VertexCount = 0;
 }
