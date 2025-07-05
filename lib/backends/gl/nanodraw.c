@@ -113,11 +113,6 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
     glBindVertexArray(context->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, context->VBO);
 
-    // Allocate the buffer on the GPU. We pass NULL for the data because we're not uploading
-    // anything yet, but we give it the full size. GL_DYNAMIC_DRAW is a hint that we'll
-    // be updating this buffer's content frequently.
-    glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE * sizeof(nkVertex_t), NULL, GL_DYNAMIC_DRAW);
-
     // Specify the layout of our ndVertex_t struct
     // Position attribute (2 floats)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, x));
@@ -128,69 +123,16 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
     // Texture coordinate attribute (2 floats)
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, u));
     glEnableVertexAttribArray(2);
+
+    // Allocate the buffer on the GPU. We pass NULL for the data because we're not uploading
+    // anything yet, but we give it the full size. GL_DYNAMIC_DRAW is a hint that we'll
+    // be updating this buffer's content frequently.
+    glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE * sizeof(nkVertex_t), NULL, GL_DYNAMIC_DRAW);
+
     
     // Unbind to prevent accidental modification
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // For a working example, you would need to fill this bitmap.
-    // Let's create a placeholder checkerboard pattern for demonstration.
-    glGenTextures(1, &context->FontTexture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, context->FontTexture);
-    
-    // Use GL_NEAREST for pixel-perfect rendering of the font
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Loop for each of the 8 rows (scanlines) of the final texture
-    for (int y = 0; y < FONT_CHAR_HEIGHT_PX; ++y) {
-        // Loop for each of the 256 characters in the font atlas
-        for (int char_index = 0; char_index < FONT_CHARS_IN_ATLAS; ++char_index) {
-            
-            // Get the single packed byte for this character at its 'y'th row.
-            // In console_font_8x8, each character takes 8 bytes, so we jump by 8.
-            unsigned char packed_byte = console_font_8x8[(char_index * FONT_CHAR_HEIGHT_PX) + y];
-            
-            // Unpack the 8 pixels (the 8 bits) from this byte
-            for (int x_bit = 0; x_bit < FONT_CHAR_WIDTH_PX; ++x_bit) {
-                
-                // Calculate the destination pixel's X and Y coordinate in the final texture
-                int dest_x = (char_index * FONT_CHAR_WIDTH_PX) + x_bit;
-                int dest_y = y;
-                
-                // Calculate the destination index in the 1D unpacked_font_data array
-                int dest_index = dest_y * FONT_ATLAS_WIDTH_PX + dest_x;
-                
-                // Check the most significant bit (the leftmost pixel) first
-                if ((packed_byte & 0x80) != 0) {
-                    unpacked_font_data[dest_index] = 0xFF; // White pixel
-                } else {
-                    unpacked_font_data[dest_index] = 0x00; // Black pixel
-                }
-                // Shift the bits to the left to process the next one in the next loop iteration
-                packed_byte <<= 1;
-            }
-        }
-    }
-    // --- END CORRECTED UNPACKING LOOP ---
-    
-    
-    // We upload the bitmap as a grayscale (1-channel) texture.
-     // Now, upload the correctly formatted UNPACKED data to OpenGL.
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 
-                 FONT_ATLAS_WIDTH_PX, FONT_ATLAS_HEIGHT_PX, 
-                 0, GL_RED, GL_UNSIGNED_BYTE, 
-                 unpacked_font_data); // Use the new unpacked buffer
-    
-    // Use swizzling to make the single red channel act like an alpha mask.
-    // The shader will see texture() -> vec4(1.0, 1.0, 1.0, R). We can then multiply by color.
-    // Or, more simply, we can make it vec4(R, R, R, R) and multiply.
-    GLint swizzleMask[] = {GL_ONE, GL_ONE, GL_ONE, GL_RED};
-    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -199,8 +141,6 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
     context->VertexCount = 0;
     context->CurrentDrawMode = GL_TRIANGLES; // Default to triangles
     context->CurrentShader = context->ShapeShaderProgram;
-    context->FontCharWidth = 8;
-    context->FontCharHeight = 8;
 
     nkDraw_SetColor(context, (nkVector4_t){1.0f, 1.0f, 1.0f, 1.0f}); // Default color white
 
@@ -255,13 +195,8 @@ void nkDraw_End(nkDrawContext_t *context)
         FlushContext(context);
     }
 
-    // Reset the current state
-    context->CurrentDrawMode = 0;
-    context->CurrentShader = 0;
-
     glBindVertexArray(0);
     glUseProgram(0);
-
 }
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
@@ -315,24 +250,18 @@ float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, fl
             // Check for buffer overflow
             if (context->VertexCount + 6 > VERTEX_BUFFER_SIZE) {
                 FlushContext(context);
-                glBindTexture(GL_TEXTURE_2D, context->FontTexture);
+                glBindTexture(GL_TEXTURE_2D, font->AtlasTexture);
             }
-
-            // Apply custom scaling to the quad from stb_truetype
-            float scaled_x0 = q.x0 * scale;
-            float scaled_y0 = q.y0 * scale;
-            float scaled_x1 = q.x1 * scale;
-            float scaled_y1 = q.y1 * scale;
 
             nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
 
-            v[0] = (nkVertex_t){ scaled_x0, scaled_y0, r, g, b, a, q.s0, q.t0 };
-            v[1] = (nkVertex_t){ scaled_x1, scaled_y0, r, g, b, a, q.s1, q.t0 };
-            v[2] = (nkVertex_t){ scaled_x0, scaled_y1, r, g, b, a, q.s0, q.t1 };
+            v[0] = (nkVertex_t){ q.x0, q.y0, r, g, b, a, q.s0, q.t0 };
+            v[1] = (nkVertex_t){ q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
+            v[2] = (nkVertex_t){ q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
 
-            v[3] = (nkVertex_t){ scaled_x1, scaled_y0, r, g, b, a, q.s1, q.t0 };
-            v[4] = (nkVertex_t){ scaled_x1, scaled_y1, r, g, b, a, q.s1, q.t1 };
-            v[5] = (nkVertex_t){ scaled_x0, scaled_y1, r, g, b, a, q.s0, q.t1 };
+            v[3] = (nkVertex_t){ q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
+            v[4] = (nkVertex_t){ q.x1, q.y1, r, g, b, a, q.s1, q.t1 };
+            v[5] = (nkVertex_t){ q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
             
             context->VertexCount += 6;
         }
@@ -401,20 +330,25 @@ static GLuint CreateShader(const char* vertSrc, const char* fragSrc)
     return program;
 }
 
-static void FlushContext(nkDrawContext_t* context) {
-    if (context->VertexCount == 0) {
+static void FlushContext(nkDrawContext_t* context) 
+{
+
+    if (context->VertexCount == 0) 
+    {
         return;
     }
 
-    glUseProgram(context->CurrentShader);
-    // Bind textures if using texture shader, set uniforms etc.
     
-    glBindVertexArray(context->VAO);
     glBindBuffer(GL_ARRAY_BUFFER, context->VBO);
+    glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE * sizeof(nkVertex_t), NULL, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, context->VertexCount * sizeof(nkVertex_t), context->VertexBuffer);
 
     // Use the primitive mode that was being batched
+    glUseProgram(context->CurrentShader);
+    glBindVertexArray(context->VAO);
     glDrawArrays(context->CurrentDrawMode, 0, context->VertexCount);
+
+    //printf("Drawing %zu vertices with mode %d using shader %d\n", context->VertexCount, context->CurrentDrawMode, context->CurrentShader);
 
     // Reset the counter for the next batch
     context->VertexCount = 0;

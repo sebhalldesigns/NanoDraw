@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define VERTEX_BUFFER_SIZE (255U)
+#define VERTEX_BUFFER_SIZE (1024U)
 
 /***************************************************************
 ** MARK: TYPEDEFS
@@ -80,22 +80,18 @@ typedef struct
     GLuint TextureShaderProgram;
     GLuint VAO;
     GLuint VBO;
-    GLuint FontTexture;
 
     nkVertex_t VertexBuffer[VERTEX_BUFFER_SIZE];
-    
     size_t VertexCount;
+
     GLenum CurrentDrawMode;
     GLuint CurrentTexture;
     GLuint CurrentShader;
-
     float CurrentColor[4];
 
     uint32_t ShapeProjMatLoc;
     uint32_t TextureProjMatLoc;
 
-    uint32_t FontCharWidth;
-    uint32_t FontCharHeight;
 
 } nkDrawContext_t;
 
@@ -120,7 +116,7 @@ void nkDraw_End(nkDrawContext_t *context);
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color);
 
-float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y, float scale);
+float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y);
 
 bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
 
