@@ -22,6 +22,7 @@
 #include <stdbool.h>
 
 #include <extern/glad/glad.h>
+#include <extern/stb/stb_truetype.h>
 
 /***************************************************************
 ** MARK: CONSTANTS & MACROS
@@ -72,7 +73,7 @@ typedef struct
     
 } nkVector4_t;
 
-typedef struct nkDrawContext_t
+typedef struct
 {
     /* persistent */
     GLuint ShapeShaderProgram;
@@ -96,21 +97,32 @@ typedef struct nkDrawContext_t
     uint32_t FontCharWidth;
     uint32_t FontCharHeight;
 
-
 } nkDrawContext_t;
+
+typedef struct 
+{
+    stbtt_bakedchar BakedCharData[96]; /* ASCII 32-126 */
+
+    GLuint AtlasTexture;
+    size_t Width;
+    size_t Height;
+
+    float FontSize;
+} nkFont_t;
 
 /***************************************************************
 ** MARK: FUNCTION DEFS
 ***************************************************************/
 
-bool nkDrawContext_Create(nkDrawContext_t *context); 
+bool nkDraw_CreateContext(nkDrawContext_t *context); 
+void nkDraw_Begin(nkDrawContext_t *context, float width, float height);
+void nkDraw_End(nkDrawContext_t *context);
 
-void nkDrawContext_BeginFrame(nkDrawContext_t *context, float width, float height);
-void nkDrawContext_EndFrame(nkDrawContext_t *context);
+void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color);
 
-void nkDrawContext_SetColor(nkDrawContext_t *context, nkVector4_t color);
+float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y, float scale);
 
-float nkDrawContext_DrawText(nkDrawContext_t* context, const char* text, float x, float y, float scale);
+bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
 
 #ifdef __cplusplus
 }

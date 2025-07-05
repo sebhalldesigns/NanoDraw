@@ -71,7 +71,7 @@ static void FlushContext(nkDrawContext_t* ctx);
 ** MARK: PUBLIC FUNCTIONS
 ***************************************************************/
 
-bool nkDrawContext_Create(nkDrawContext_t *context)
+bool nkDraw_CreateContext(nkDrawContext_t *context)
 {
     context->ShapeShaderProgram = CreateShader(
         (const char*)shaders_glsl_shape_vert, 
@@ -199,15 +199,16 @@ bool nkDrawContext_Create(nkDrawContext_t *context)
     context->VertexCount = 0;
     context->CurrentDrawMode = GL_TRIANGLES; // Default to triangles
     context->CurrentShader = context->ShapeShaderProgram;
-    nkDrawContext_SetColor(context, (nkVector4_t){1.0f, 1.0f, 1.0f, 1.0f}); // Default color white
     context->FontCharWidth = 8;
     context->FontCharHeight = 8;
+
+    nkDraw_SetColor(context, (nkVector4_t){1.0f, 1.0f, 1.0f, 1.0f}); // Default color white
 
     printf("NanoDraw context created successfully.\n");
     return true;
 }
 
-void nkDrawContext_BeginFrame(nkDrawContext_t *context, float width, float height)
+void nkDraw_Begin(nkDrawContext_t *context, float width, float height)
 {
 
     context->VertexCount = 0; // Reset vertex count for the new frame
@@ -247,7 +248,7 @@ void nkDrawContext_BeginFrame(nkDrawContext_t *context, float width, float heigh
 
 }
 
-void nkDrawContext_EndFrame(nkDrawContext_t *context)
+void nkDraw_End(nkDrawContext_t *context)
 {
     // If we have any vertices to draw, flush them.
     if (context->VertexCount > 0) {
@@ -263,7 +264,7 @@ void nkDrawContext_EndFrame(nkDrawContext_t *context)
 
 }
 
-void nkDrawContext_SetColor(nkDrawContext_t *context, nkVector4_t color)
+void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
 {
     context->CurrentColor[0] = color.r;
     context->CurrentColor[1] = color.g;
@@ -271,12 +272,14 @@ void nkDrawContext_SetColor(nkDrawContext_t *context, nkVector4_t color)
     context->CurrentColor[3] = color.a;
 }
 
-float nkDrawContext_DrawText(nkDrawContext_t* context, const char* text, float x, float y, float scale)
+float nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y, float scale)
 {
-    // --- 1. State Management: Prepare for textured drawing ---
-    const int vertices_per_char = 6;
-    
-    if (context->CurrentDrawMode != GL_TRIANGLES || context->CurrentShader != context->TextureShaderProgram) {
+
+    if (
+            (context->CurrentDrawMode != GL_TRIANGLES) 
+        ||  (context->CurrentShader != context->TextureShaderProgram)
+    ) 
+    {
         FlushContext(context);
     }
     
@@ -285,62 +288,57 @@ float nkDrawContext_DrawText(nkDrawContext_t* context, const char* text, float x
     
     // --- 2. Prepare for drawing ---
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, context->FontTexture);
+    glBindTexture(GL_TEXTURE_2D, font->AtlasTexture);
 
-    const float scaledWidth = (float)context->FontCharWidth * scale;
-    const float scaledHeight = (float)context->FontCharHeight * scale;
-    float penX = x;
+    float pen_x = x;
+    float pen_y = y;
 
     const float r = context->CurrentColor[0];
     const float g = context->CurrentColor[1];
     const float b = context->CurrentColor[2];
     const float a = context->CurrentColor[3];
     
-    // This is correct now, as your texture atlas contains 256 characters.
-    const float atlasWidthInChars = 256.0f;
+    for (const char* p = text; *p; ++p) {
+        // Only process printable ASCII characters that we have baked
+        if (*p >= 32 && *p < 128) {
+            
+            stbtt_aligned_quad q;
+            
+            // This function calculates the vertex positions and UVs for the character quad
+            // It also advances pen_x and pen_y for you, including kerning.
+            stbtt_GetBakedQuad(font->BakedCharData, 
+                               font->Width, font->Height, 
+                               *p - 32, // Character index (0-95)
+                               &pen_x, &pen_y, 
+                               &q, 1); // 1 for opengl texture coordinates
 
-    // --- 3. Iterate through text and generate vertices ---
-    // Cast to unsigned char* to correctly handle ASCII values from 0-255.
-    for (const unsigned char* p = (const unsigned char*)text; *p; ++p) {
-        unsigned char c = *p;
-        
-        if (context->VertexCount + vertices_per_char > VERTEX_BUFFER_SIZE) {
-            FlushContext(context);
-            glBindTexture(GL_TEXTURE_2D, context->FontTexture);
+            // Check for buffer overflow
+            if (context->VertexCount + 6 > VERTEX_BUFFER_SIZE) {
+                FlushContext(context);
+                glBindTexture(GL_TEXTURE_2D, context->FontTexture);
+            }
+
+            // Apply custom scaling to the quad from stb_truetype
+            float scaled_x0 = q.x0 * scale;
+            float scaled_y0 = q.y0 * scale;
+            float scaled_x1 = q.x1 * scale;
+            float scaled_y1 = q.y1 * scale;
+
+            nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
+
+            v[0] = (nkVertex_t){ scaled_x0, scaled_y0, r, g, b, a, q.s0, q.t0 };
+            v[1] = (nkVertex_t){ scaled_x1, scaled_y0, r, g, b, a, q.s1, q.t0 };
+            v[2] = (nkVertex_t){ scaled_x0, scaled_y1, r, g, b, a, q.s0, q.t1 };
+
+            v[3] = (nkVertex_t){ scaled_x1, scaled_y0, r, g, b, a, q.s1, q.t0 };
+            v[4] = (nkVertex_t){ scaled_x1, scaled_y1, r, g, b, a, q.s1, q.t1 };
+            v[5] = (nkVertex_t){ scaled_x0, scaled_y1, r, g, b, a, q.s0, q.t1 };
+            
+            context->VertexCount += 6;
         }
-
-        const float x0 = penX;
-        const float y0 = y;
-        const float x1 = penX + scaledWidth;
-        const float y1 = y + scaledHeight;
-
-        // ***** FIX IS HERE *****
-        // The character's index is its own ASCII value because the font starts at 0.
-        const int charIndex = c;
-        // The UV calculation logic itself is correct for your atlas layout.
-        const float u0 = (float)charIndex / atlasWidthInChars;
-        const float u1 = (float)(charIndex + 1) / atlasWidthInChars;
-        // *********************
-
-        const float v0 = 0.0f;
-        const float v1 = 1.0f;
-
-        nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
-
-        v[0] = (nkVertex_t){ x0, y0, r, g, b, a, u0, v0 };
-        v[1] = (nkVertex_t){ x1, y0, r, g, b, a, u1, v0 };
-        v[2] = (nkVertex_t){ x0, y1, r, g, b, a, u0, v1 };
-        
-        v[3] = (nkVertex_t){ x1, y0, r, g, b, a, u1, v0 };
-        v[4] = (nkVertex_t){ x1, y1, r, g, b, a, u1, v1 };
-        v[5] = (nkVertex_t){ x0, y1, r, g, b, a, u0, v1 };
-        
-        context->VertexCount += vertices_per_char;
-        
-        penX += scaledWidth;
     }
-
-    return penX - x;
+    
+    return pen_x - x; // Return total width
 }
 
 /***************************************************************
