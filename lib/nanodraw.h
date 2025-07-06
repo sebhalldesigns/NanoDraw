@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define VERTEX_BUFFER_SIZE (1024U)
+#define VERTEX_BUFFER_SIZE (1024*1024U)
 
 /***************************************************************
 ** MARK: TYPEDEFS

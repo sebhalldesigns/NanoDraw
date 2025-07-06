@@ -1,4 +1,5 @@
 #version 330 core
+
 flat in uint vertexType;
 in vec4 vertexColor;
 in vec2 TexCoord;
@@ -8,16 +9,11 @@ uniform sampler2D uTexture;
 
 void main()
 {
-    switch (vertexType) 
-    {
-        case 1:
-        {
-            FragColor = vertexColor * texture(uTexture, TexCoord);
-        } break;
+    // Calculate BOTH possible outcomes for every pixel
+    vec4 shapeColor = vertexColor;
+    vec4 textColor  = vertexColor * texture(uTexture, TexCoord);
 
-        default:
-        {
-            FragColor = vertexColor;
-        } break;
-    }
+    // Select the correct outcome using arithmetic instead of a branch.
+    // float(vertexType) will be 0.0 for shapes and 1.0 for text.
+    FragColor = mix(shapeColor, textColor, float(vertexType));
 }
