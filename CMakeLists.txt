@@ -70,8 +70,6 @@ target_link_libraries(NanoDraw PUBLIC
 )
 
 embed_resources(NanoDraw
-    shaders/glsl/shape.frag
-    shaders/glsl/shape.vert
-    shaders/glsl/texture.frag
-    shaders/glsl/texture.vert
+    shaders/glsl/general.vert
+    shaders/glsl/general.frag
 )

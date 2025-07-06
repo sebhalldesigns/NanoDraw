@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define VERTEX_BUFFER_SIZE (1024*1024U)
+#define VERTEX_BUFFER_SIZE (1024U)
 
 /***************************************************************
 ** MARK: TYPEDEFS
@@ -40,6 +40,7 @@ extern "C" {
 
 typedef struct
 {
+    uint32_t vertexType; // 0 for shape, 1 for texture
     float x, y;
     float r, g, b, a;
     float u, v;
@@ -73,36 +74,23 @@ typedef struct
     
 } nkVector4_t;
 
-typedef struct 
+typedef struct
 {
-    GLenum DrawMode;
-    GLuint ShaderProgram;
+    /* persistent */
+    GLuint GeneralShaderProgram;
     GLuint VAO;
     GLuint VBO;
 
     nkVertex_t VertexBuffer[VERTEX_BUFFER_SIZE];
     size_t VertexCount;
 
-} nkDrawBuffer_t;
-
-typedef struct
-{
-    /* persistent */
-    GLuint ShapeShaderProgram;
-    GLuint TextureShaderProgram;
-
-    size_t ShapeProjMatLoc;
-    size_t TextureProjMatLoc;
-
-    nkDrawBuffer_t ShapeBuffer;   /* transparent shapes */
-    nkDrawBuffer_t TextureBuffer; /* text */
-    
-    nkDrawBuffer_t *CurrentBuffer; /* current buffer to draw into */
-
     GLenum CurrentDrawMode;
     GLuint CurrentTexture;
     GLuint CurrentShader;
     float CurrentColor[4];
+
+    uint32_t GeneralProjMatLoc;
+
 
 } nkDrawContext_t;
 
