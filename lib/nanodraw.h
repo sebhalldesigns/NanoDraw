@@ -40,6 +40,7 @@ extern "C" {
 
 typedef struct
 {
+    uint32_t vertexType;
     float x, y;
     float r, g, b, a;
     float u, v;

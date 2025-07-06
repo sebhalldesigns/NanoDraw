@@ -100,15 +100,18 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
 
     // Specify the layout of our ndVertex_t struct
 
-    // Position attribute (2 floats)
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, x));
+     // Use glVertexAttribIPointer for integer attributes!
+    glVertexAttribIPointer(0, 1, GL_UNSIGNED_INT, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, vertexType));    
     glEnableVertexAttribArray(0);
-    // Color attribute (4 floats)
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, r));
+    // Position attribute (2 floats)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, x));
     glEnableVertexAttribArray(1);
-    // Texture coordinate attribute (2 floats)
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, u));
+    // Color attribute (4 floats)
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, r));
     glEnableVertexAttribArray(2);
+    // Texture coordinate attribute (2 floats)
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(nkVertex_t), (void*)offsetof(nkVertex_t, u));
+    glEnableVertexAttribArray(3);
 
     // Allocate the buffer on the GPU. We pass NULL for the data because we're not uploading
     // anything yet, but we give it the full size. GL_DYNAMIC_DRAW is a hint that we'll
@@ -241,13 +244,13 @@ void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, flo
 
             nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
 
-            v[0] = (nkVertex_t){ q.x0, q.y0, r, g, b, a, q.s0, q.t0 };
-            v[1] = (nkVertex_t){ q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
-            v[2] = (nkVertex_t){ q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
+            v[0] = (nkVertex_t){ 1, q.x0, q.y0, r, g, b, a, q.s0, q.t0 };
+            v[1] = (nkVertex_t){ 1, q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
+            v[2] = (nkVertex_t){ 1, q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
 
-            v[3] = (nkVertex_t){ q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
-            v[4] = (nkVertex_t){ q.x1, q.y1, r, g, b, a, q.s1, q.t1 };
-            v[5] = (nkVertex_t){ q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
+            v[3] = (nkVertex_t){ 1, q.x1, q.y0, r, g, b, a, q.s1, q.t0 };
+            v[4] = (nkVertex_t){ 1, q.x1, q.y1, r, g, b, a, q.s1, q.t1 };
+            v[5] = (nkVertex_t){ 1, q.x0, q.y1, r, g, b, a, q.s0, q.t1 };
 
             context->VertexCount += 6;
         }
@@ -287,14 +290,13 @@ void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
     // Get a pointer to the next available slot in the CPU vertex buffer
     nkVertex_t* v = &context->VertexBuffer[context->VertexCount];
 
-    // Create the quad (2 triangles). UVs are (0,0) as they are unused.
-    v[0] = (nkVertex_t){ x,  y,  r, g, b, a, 0.999, 0.999 };
-    v[1] = (nkVertex_t){ x1, y,  r, g, b, a, 0.999, 0.999 };
-    v[2] = (nkVertex_t){ x,  y1, r, g, b, a, 0.999, 0.999 };
+    v[0] = (nkVertex_t){ 0, x,  y,  r, g, b, a, 0, 0 };
+    v[1] = (nkVertex_t){ 0, x1, y,  r, g, b, a, 0, 0 };
+    v[2] = (nkVertex_t){ 0, x,  y1, r, g, b, a, 0, 0 };
 
-    v[3] = (nkVertex_t){ x1, y,  r, g, b, a, 0.999, 0.999 };
-    v[4] = (nkVertex_t){ x1, y1, r, g, b, a, 0.999, 0.999 };
-    v[5] = (nkVertex_t){ x,  y1, r, g, b, a, 0.999, 0.999 };
+    v[3] = (nkVertex_t){ 0, x1, y,  r, g, b, a, 0, 0 };
+    v[4] = (nkVertex_t){ 0, x1, y1, r, g, b, a, 0, 0 };
+    v[5] = (nkVertex_t){ 0, x,  y1, r, g, b, a, 0, 0 };
     
     context->VertexCount += 6;
 }
