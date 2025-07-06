@@ -184,7 +184,7 @@ void nkDraw_End(nkDrawContext_t *context)
     glBindVertexArray(0);
     glUseProgram(0);
 
-    printf("NanoDraw context ended. Total draws this frame: %zu\n", drawCount);
+    //printf("NanoDraw context ended. Total draws this frame: %zu\n", drawCount);
     drawCount = 0; // Reset draw count for the next frame
 }
 
