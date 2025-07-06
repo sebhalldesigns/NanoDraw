@@ -48,7 +48,7 @@ extern const uint32_t shaders_glsl_general_vert_size;
 
 extern const uint8_t console_font_8x8[];
 
-static char log[512];
+static char logBuffer[512];
 
 static size_t drawCount = 0;
 
@@ -318,8 +318,8 @@ static GLuint CreateShader(const char* vertSrc, const char* fragSrc)
 
     if (status == GL_FALSE) 
     {
-        glGetShaderInfoLog(vertShader, 512, NULL, log);
-        fprintf(stderr, "ERROR: Vertex shader compilation failed:\n%s\n", log);
+        glGetShaderInfoLog(vertShader, 512, NULL, logBuffer);
+        fprintf(stderr, "ERROR: Vertex shader compilation failed:\n%s\n", logBuffer);
         glDeleteShader(vertShader);
         return 0;
     }
@@ -332,8 +332,8 @@ static GLuint CreateShader(const char* vertSrc, const char* fragSrc)
 
     if (status == GL_FALSE) 
     {
-        glGetShaderInfoLog(fragShader, 512, NULL, log);
-        fprintf(stderr, "ERROR: Fragment shader compilation failed:\n%s\n", log);
+        glGetShaderInfoLog(fragShader, 512, NULL, logBuffer);
+        fprintf(stderr, "ERROR: Fragment shader compilation failed:\n%s\n", logBuffer);
         glDeleteShader(vertShader);
         glDeleteShader(fragShader);
         return 0;
@@ -348,8 +348,8 @@ static GLuint CreateShader(const char* vertSrc, const char* fragSrc)
 
     if (status == GL_FALSE) 
     {
-        glGetProgramInfoLog(program, 512, NULL, log);
-        fprintf(stderr, "ERROR: Shader program linking failed:\n%s\n", log);
+        glGetProgramInfoLog(program, 512, NULL, logBuffer);
+        fprintf(stderr, "ERROR: Shader program linking failed:\n%s\n", logBuffer);
         glDeleteProgram(program);
         program = 0;
     }

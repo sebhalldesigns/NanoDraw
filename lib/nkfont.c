@@ -116,6 +116,54 @@ bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *
     return true;
 }
 
+bool nkFont_LoadFromMemory(nkFont_t *font, uint8_t *data, size_t dataSize, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height)
+{
+    /* load font here */
+    int result = stbtt_BakeFontBitmap(
+        data, 
+        0, 
+        fontSize, 
+        atlas_buffer, 
+        atlas_buffer_width, 
+        atlas_buffer_height,                               
+        32, 96, 
+        font->BakedCharData
+    );
+
+    if (result <= 0) 
+    {
+        fprintf(stderr, "ERROR: Failed to bake font bitmap. Atlas may be too small for font size %.2f.\n", fontSize);
+        return false;
+    }
+
+    glGenTextures(1, &font->AtlasTexture);
+    glBindTexture(GL_TEXTURE_2D, font->AtlasTexture);
+
+    // Use GL_LINEAR filtering for smooth rendering if the text is scaled.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    // Tell OpenGL how to unpack the pixel data
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    
+    // Upload the 1-channel (grayscale) bitmap data.
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas_buffer_width, atlas_buffer_height,
+                 0, GL_RED, GL_UNSIGNED_BYTE, atlas_buffer);
+
+    GLint swizzleMask[] = {GL_ONE, GL_ONE, GL_ONE, GL_RED};
+    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+    // --- Step 4: Store final font data in the struct ---
+    font->Width = atlas_buffer_width;
+    font->Height = atlas_buffer_height;
+    font->FontSize = fontSize;
+
+    printf("Font '%pu' loaded successfully with size %.2f.\n", data, fontSize);
+
+    return true;
+}
+
+
 /***************************************************************
 ** MARK: STATIC FUNCTIONS
 ***************************************************************/
