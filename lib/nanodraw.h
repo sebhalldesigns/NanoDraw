@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define VERTEX_BUFFER_SIZE (1024U)
+#define VERTEX_BUFFER_SIZE (1024*1024U)
 
 /***************************************************************
 ** MARK: TYPEDEFS
@@ -40,7 +40,6 @@ extern "C" {
 
 typedef struct
 {
-    uint32_t vertexType; // 0 for shape, 1 for texture
     float x, y;
     float r, g, b, a;
     float u, v;

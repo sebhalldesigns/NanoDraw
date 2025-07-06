@@ -88,6 +88,9 @@ bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *
         return false;
     }
 
+    /* make sure the bottom right pixel is filled */
+    atlas_buffer[(atlas_buffer_height - 1) * atlas_buffer_width + (atlas_buffer_width - 1)] = 255;
+
     glGenTextures(1, &font->AtlasTexture);
     glBindTexture(GL_TEXTURE_2D, font->AtlasTexture);
 
