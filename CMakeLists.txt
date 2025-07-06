@@ -24,8 +24,7 @@ endfunction()
 if (WIN32)
 
     set(NANODRAW_SOURCES
-        lib/backends/gl/nanodraw.c
-        lib/font-8x8.c
+        lib/nanodraw.c
         lib/nkfont.c
         extern/glad/glad.c
     )

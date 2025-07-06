@@ -32,7 +32,8 @@
 extern "C" {
 #endif
 
-#define VERTEX_BUFFER_SIZE (1024*1024U)
+#define VERTEX_BUFFER_SIZE  (1024*1024U)
+#define TEXTURE_ATTACHMENTS (16U)
 
 /***************************************************************
 ** MARK: TYPEDEFS
