@@ -24,6 +24,9 @@
 #include <extern/glad/glad.h>
 #include <extern/stb/stb_truetype.h>
 
+#include "color.h"
+#include "geometry.h"
+
 /***************************************************************
 ** MARK: CONSTANTS & MACROS
 ***************************************************************/
@@ -47,63 +50,33 @@ typedef struct
     float u, v;
 } nkVertex_t;
 
-typedef struct 
-{   
-    union
-    {
-        float r;
-        float x;
-    };
-
-    union
-    {
-        float g;
-        float y;
-    };
-
-    union
-    {
-        float b;
-        float z;
-    };
-
-    union
-    {
-        float a;
-        float w;
-    };
-    
-} nkVector4_t;
-
 typedef struct
 {
     /* persistent */
-    GLuint GeneralShaderProgram;
-    GLuint VAO;
-    GLuint VBO;
+    GLuint generalShaderProgram;
+    GLuint vao;
+    GLuint vbo;
 
-    nkVertex_t VertexBuffer[VERTEX_BUFFER_SIZE];
-    size_t VertexCount;
+    nkVertex_t vertexBuffer[VERTEX_BUFFER_SIZE];
+    size_t vertexCount;
 
-    GLenum CurrentDrawMode;
-    GLuint CurrentTexture;
-    GLuint CurrentShader;
-    float CurrentColor[4];
+    GLenum currentDrawMode;
+    GLuint currentTexture;
+    GLuint currentShader;
+    float currentColor[4];
 
-    uint32_t GeneralProjMatLoc;
-
-
+    uint32_t generalProjMatLoc;
 } nkDrawContext_t;
 
 typedef struct 
 {
-    stbtt_bakedchar BakedCharData[96]; /* ASCII 32-126 */
+    stbtt_bakedchar bakedCharData[96]; /* ASCII 32-126 */
 
-    GLuint AtlasTexture;
-    size_t Width;
-    size_t Height;
+    GLuint atlasTexture;
+    size_t width;
+    size_t height;
 
-    float FontSize;
+    float fontSize;
 } nkFont_t;
 
 
