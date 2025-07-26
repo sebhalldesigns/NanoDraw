@@ -108,14 +108,8 @@ bool nkFont_LoadFromMemory(nkFont_t *font, uint8_t *data, size_t dataSize, float
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
     // Upload the 1-channel (grayscale) bitmap data.
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)atlas_buffer_width, (GLsizei)atlas_buffer_height,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, (GLsizei)atlas_buffer_width, (GLsizei)atlas_buffer_height,
                  0, GL_RED, GL_UNSIGNED_BYTE, atlas_buffer);
-
-    GLint swizzleMask[] = {GL_ONE, GL_ONE, GL_ONE, GL_RED};
-
-    #ifndef __EMSCRIPTEN__
-        glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-    #endif
 
     // --- Step 4: Store final font data in the struct ---
     font->width = atlas_buffer_width;
