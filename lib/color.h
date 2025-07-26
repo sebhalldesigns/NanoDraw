@@ -36,6 +36,7 @@
 #define NK_COLOR_BLUE       (nkColor_t){0.0f, 0.0f, 1.0f, 1.0f}
 #define NK_COLOR_YELLOW     (nkColor_t){1.0f, 1.0f, 0.0f, 1.0f}
 #define NK_COLOR_CYAN       (nkColor_t){0.0f, 1.0f, 1.0f, 1.0f}
+#define NK_COLOR_ORANGE     (nkColor_t){1.0f, 0.5f, 0.0f, 1.0f}
 #define NK_COLOR_MAGENTA    (nkColor_t){0.75f, 0.0f, 0.75f, 1.0f}
 #define NK_COLOR_GRAY       (nkColor_t){0.5f, 0.5f, 0.5f, 1.0f}
 #define NK_COLOR_LIGHT_GRAY (nkColor_t){0.75f, 0.75f, 0.75f, 1.0f}
