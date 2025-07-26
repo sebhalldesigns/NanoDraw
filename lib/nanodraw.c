@@ -40,11 +40,20 @@
 ** MARK: STATIC VARIABLES
 ***************************************************************/
 
-extern const uint8_t shaders_glsl_general_frag[];
-extern const uint32_t shaders_glsl_genera_frag_size;
+#if __EMSCRIPTEN__
+    extern const uint8_t shaders_gles_general_frag[];
+    extern const uint32_t shaders_gles_genera_frag_size;
 
-extern const uint8_t shaders_glsl_general_vert[];
-extern const uint32_t shaders_glsl_general_vert_size;
+    extern const uint8_t shaders_gles_general_vert[];
+    extern const uint32_t shaders_gles_general_vert_size;
+#else
+    extern const uint8_t shaders_opengl_general_frag[];
+    extern const uint32_t shaders_opengl_genera_frag_size;
+
+    extern const uint8_t shaders_opengl_general_vert[];
+    extern const uint32_t shaders_opengl_general_vert_size;
+#endif
+
 
 extern const uint8_t console_font_8x8[];
 
@@ -69,10 +78,17 @@ static void FlushContext(nkDrawContext_t* ctx);
 
 bool nkDraw_CreateContext(nkDrawContext_t *context)
 {
-    context->generalShaderProgram = CreateShader(
-        (const char*)shaders_glsl_general_vert, 
-        (const char*)shaders_glsl_general_frag
-    );
+    #if __EMSCRIPTEN__
+        context->generalShaderProgram = CreateShader(
+            (const char*)shaders_gles_general_vert, 
+            (const char*)shaders_gles_general_frag
+        );
+    #else
+        context->generalShaderProgram = CreateShader(
+            (const char*)shaders_opengl_general_vert, 
+            (const char*)shaders_opengl_general_frag
+        );
+    #endif
 
     if (context->generalShaderProgram == 0)
     {

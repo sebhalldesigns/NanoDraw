@@ -20,7 +20,6 @@ function(embed_resources target)
 endfunction()
 
 
-
 if (WIN32)
 
     set(NANODRAW_SOURCES
@@ -32,6 +31,13 @@ if (WIN32)
     set(NANODRAW_LIBS
         user32
         opengl32
+    )
+elseif(EMSCRIPTEN)
+
+    set(NANODRAW_SOURCES
+        lib/nanodraw.c
+        lib/nkfont.c
+        extern/glad/glad.c
     )
 
 elseif(UNIX)
@@ -46,11 +52,7 @@ elseif(APPLE)
         lib/backends/gl/nanodraw.c
     )
     
-elseif(EMSCRIPTEN)
 
-    set(NANODRAW_SOURCES
-        lib/backends/gl/nanodraw.c
-    )
 else()
     message(FATAL_ERROR "Unsupported platform!")
 endif()
@@ -68,7 +70,14 @@ target_link_libraries(NanoDraw PUBLIC
     ${NANODRAW_LIBS}
 )
 
-embed_resources(NanoDraw
-    shaders/glsl/general.vert
-    shaders/glsl/general.frag
-)
+if (NOT EMSCRIPTEN)
+    embed_resources(NanoDraw
+        shaders/opengl/general.vert
+        shaders/opengl/general.frag
+    )
+else()
+    embed_resources(NanoDraw
+        shaders/gles/general.vert
+        shaders/gles/general.frag
+    )
+endif()

@@ -1,4 +1,8 @@
-#version 330 core
+#version 300 es
+precision highp float;
+precision highp int;
+precision highp usampler2D;
+
 layout (location = 0) in uint aType;
 layout (location = 1) in vec2 aPos;
 layout (location = 2) in vec4 aColor; // Can be used to tint the texture

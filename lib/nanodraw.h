@@ -20,8 +20,16 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
-#include <extern/glad/glad.h>
+#if __EMSCRIPTEN__
+    #include <emscripten/emscripten.h>
+    #include <emscripten/html5.h>
+    #include <GLES3/gl3.h>
+#else
+    #include <extern/glad/glad.h>
+#endif 
+
 #include <extern/stb/stb_truetype.h>
 
 #include "color.h"
