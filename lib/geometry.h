@@ -80,6 +80,13 @@ typedef nkVector2_t nkSize_t;
 typedef nkVector4_t nkColor_t;
 typedef nkVector4_t nkRect_t;
 
+typedef struct
+{
+    float top;
+    float right;
+    float bottom;
+    float left;
+} nkThickness_t;
 
 /***************************************************************
 ** MARK: FUNCTION DEFS
