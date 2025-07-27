@@ -140,7 +140,7 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     // --- 5. Set Initial State ---
     context->vertexCount = 0;
