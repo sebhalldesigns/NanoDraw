@@ -212,7 +212,7 @@ void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
     context->currentColor[3] = color.a;
 }
 
-void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y)
+void nkDraw_Text(nkDrawContext_t* context, nkFont_t* newFont, const char* text, float x, float y)
 {
 
     if (
@@ -224,6 +224,13 @@ void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, flo
 
         context->currentDrawMode = GL_TRIANGLES;
         context->currentShader = context->generalShaderProgram;
+    }
+
+    static nkFont_t* font = NULL;
+
+    if (newFont)
+    {
+        font = newFont;
     }
     
     // --- 2. Prepare for drawing ---
