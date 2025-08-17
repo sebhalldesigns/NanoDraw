@@ -19,6 +19,7 @@
 ***************************************************************/
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /***************************************************************
 ** MARK: CONSTANTS & MACROS
@@ -97,6 +98,8 @@ nkColor_t nkColor_Darken(nkColor_t color, float gain);
 
 nkThickness_t nkThickness_FromConstant(float value);
 nkThickness_t nkThickness_FromHorizontalVertical(float horizontal, float vertical);
+
+bool nkRect_ContainsPoint(nkRect_t rect, nkPoint_t point);
 
 /***************************************************************
 ** MARK: FUNCTION DEFS
