@@ -30,6 +30,7 @@
     #include <extern/glad/glad.h>
 #endif 
 
+#include <extern/nanovg/nanovg.h>
 #include <extern/stb/stb_truetype.h>
 
 #include "color.h"
@@ -52,28 +53,7 @@ extern "C" {
 
 typedef struct
 {
-    uint32_t vertexType;
-    float x, y;
-    float r, g, b, a;
-    float u, v;
-} nkVertex_t;
-
-typedef struct
-{
-    /* persistent */
-    GLuint generalShaderProgram;
-    GLuint vao;
-    GLuint vbo;
-
-    nkVertex_t vertexBuffer[VERTEX_BUFFER_SIZE];
-    size_t vertexCount;
-
-    GLenum currentDrawMode;
-    GLuint currentTexture;
-    GLuint currentShader;
-    float currentColor[4];
-
-    uint32_t generalProjMatLoc;
+    NVGcontext* nvgContext;
 } nkDrawContext_t;
 
 typedef struct 

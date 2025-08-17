@@ -26,6 +26,7 @@ if (WIN32)
         lib/nanodraw.c
         lib/nkfont.c
         extern/glad/glad.c
+        extern/nanovg/nanovg.c
     )
 
     set(NANODRAW_LIBS
@@ -38,6 +39,7 @@ elseif(EMSCRIPTEN)
         lib/nanodraw.c
         lib/nkfont.c
         extern/glad/glad.c
+        extern/nanovg/nanovg.c
     )
 
 elseif(UNIX)
