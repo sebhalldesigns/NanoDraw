@@ -77,6 +77,10 @@ bool nkDraw_CreateContext(nkDrawContext_t *context);
 void nkDraw_Begin(nkDrawContext_t *context, float width, float height);
 void nkDraw_End(nkDrawContext_t *context);
 
+void nkDraw_SaveContext(nkDrawContext_t *context);
+void nkDraw_RestoreContext(nkDrawContext_t *context);
+void nkDraw_SetClipRect(nkDrawContext_t *context, nkRect_t clipRect);
+
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color);
 
 /* angle in radians, clockwise from vertical */

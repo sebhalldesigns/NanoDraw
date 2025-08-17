@@ -92,11 +92,27 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
 void nkDraw_Begin(nkDrawContext_t *context, float width, float height)
 {
     nvgBeginFrame(context->nvgContext, width, height, 1.0f);
+    nvgResetScissor(context->nvgContext);
 }
 
 void nkDraw_End(nkDrawContext_t *context)
 {
     nvgEndFrame(context->nvgContext);
+}
+
+void nkDraw_SaveContext(nkDrawContext_t *context)
+{
+    nvgSave(context->nvgContext);
+}
+
+void nkDraw_RestoreContext(nkDrawContext_t *context)
+{
+    nvgRestore(context->nvgContext);
+}
+
+void nkDraw_SetClipRect(nkDrawContext_t *context, nkRect_t clipRect)
+{
+    nvgIntersectScissor(context->nvgContext, clipRect.x, clipRect.y, clipRect.width, clipRect.height);
 }
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
