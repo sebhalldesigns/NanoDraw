@@ -92,6 +92,9 @@ typedef struct
 nkColor_t nkColor_FromHexRGB(uint32_t hex);
 nkColor_t nkColor_FromHexARGB(uint32_t hex);
 
+nkColor_t nkColor_Lighten(nkColor_t color, float gain);
+nkColor_t nkColor_Darken(nkColor_t color, float gain);
+
 nkThickness_t nkThickness_FromConstant(float value);
 nkThickness_t nkThickness_FromHorizontalVertical(float horizontal, float vertical);
 

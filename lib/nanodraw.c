@@ -78,7 +78,7 @@ bool nkDraw_CreateContext(nkDrawContext_t *context)
         else 
         {
             printf("Font loaded successfully with ID: %d\n", font);
-            nvgFontSize(context->nvgContext, 16.0f);
+            nvgFontSize(context->nvgContext, 14.0f);
             nvgFontFace(context->nvgContext, "sans");
         }
 
@@ -101,10 +101,78 @@ void nkDraw_End(nkDrawContext_t *context)
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color)
 {
-
     nvgFillColor(context->nvgContext, nvgRGBAf(color.r, color.g, color.b, color.a));
+}
+
+/* angle in radians, clockwise from vertical */
+void nkDraw_SetColorGradient(nkDrawContext_t *context, nkVector4_t colorStart, nkVector4_t colorEnd, float angle, float x, float y, float w, float h)
+{
+    NVGcolor start = nvgRGBAf(colorStart.r, colorStart.g, colorStart.b, colorStart.a);
+    NVGcolor end = nvgRGBAf(colorEnd.r, colorEnd.g, colorEnd.b, colorEnd.a);
+
+    float dx = sinf(angle);
+    float dy = cosf(angle);
+
+    float halfDiag = 0.5f * (fabsf(dx) * w + fabsf(dy) * h);
+
+    float cx = x + w * 0.5f;
+    float cy = y + h * 0.5f;
+
+    float x0 = cx - dx * halfDiag;
+    float y0 = cy - dy * halfDiag;
+    float x1 = cx + dx * halfDiag;
+    float y1 = cy + dy * halfDiag;
+
+    NVGpaint paint = nvgLinearGradient(
+        context->nvgContext, 
+        x0, y0, x1, y1,
+        start, 
+        end
+    );
+    
+    nvgFillPaint(context->nvgContext, paint);
+    
+}
+
+void nkDraw_SetStrokeColor(nkDrawContext_t *context, nkVector4_t color)
+{
+    nvgStrokeColor(context->nvgContext, nvgRGBAf(color.r, color.g, color.b, color.a));
 
 }
+
+void nkDraw_SetStrokeColorGradient(nkDrawContext_t *context, nkVector4_t colorStart, nkVector4_t colorEnd, float angle, float x, float y, float w, float h)
+{
+    NVGcolor start = nvgRGBAf(colorStart.r, colorStart.g, colorStart.b, colorStart.a);
+    NVGcolor end = nvgRGBAf(colorEnd.r, colorEnd.g, colorEnd.b, colorEnd.a);
+
+    float dx = sinf(angle);
+    float dy = cosf(angle);
+
+    float halfDiag = 0.5f * (fabsf(dx) * w + fabsf(dy) * h);
+
+    float cx = x + w * 0.5f;
+    float cy = y + h * 0.5f;
+
+    float x0 = cx - dx * halfDiag;
+    float y0 = cy - dy * halfDiag;
+    float x1 = cx + dx * halfDiag;
+    float y1 = cy + dy * halfDiag;
+
+    NVGpaint paint = nvgLinearGradient(
+        context->nvgContext, 
+        x0, y0, x1, y1,
+        start, 
+        end
+    );
+    
+    nvgStrokePaint(context->nvgContext, paint);
+}
+
+void nkDraw_SetStrokeWidth(nkDrawContext_t *context, float width)
+{
+    nvgStrokeWidth(context->nvgContext, width);
+}
+
 
 void nkDraw_Text(nkDrawContext_t* context, nkFont_t* newFont, const char* text, float x, float y)
 {
@@ -123,10 +191,29 @@ void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
     nvgFill(context->nvgContext);
 }
 
+void nkDraw_RoundedRect(nkDrawContext_t* context, float x, float y, float w, float h, float radius)
+{
+    nvgBeginPath(context->nvgContext);
+    nvgRoundedRect(context->nvgContext, x, y, w, h, radius);
+    
+    nvgFill(context->nvgContext);
+}
+
+void nkDraw_RoundedRectPath(nkDrawContext_t* context, float x, float y, float w, float h, float radius)
+{
+    nvgBeginPath(context->nvgContext);
+    nvgRoundedRect(context->nvgContext, x, y, w, h, radius);
+    
+    nvgStroke(context->nvgContext);
+}
+
 nkRect_t nkDraw_MeasureText(nkDrawContext_t* context, nkFont_t* font, const char* text)
 {
     float bounds[4] = {0};
     
+    nvgFontSize(context->nvgContext, 14.0f);
+    nvgFontFace(context->nvgContext, "sans");
+
     nvgTextBounds(context->nvgContext, 0.0f, 0.0f, text, NULL, bounds);
 
     return (nkRect_t) {

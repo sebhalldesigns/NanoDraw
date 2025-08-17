@@ -57,6 +57,26 @@ nkColor_t nkColor_FromHexARGB(uint32_t hex)
     };
 }
 
+nkColor_t nkColor_Lighten(nkColor_t color, float gain)
+{
+    return (nkColor_t) {
+        .r = color.r + gain * (1.0f - color.r),
+        .g = color.g + gain * (1.0f - color.g),
+        .b = color.b + gain * (1.0f - color.b),
+        .a = color.a
+    };
+}
+
+nkColor_t nkColor_Darken(nkColor_t color, float gain)
+{
+    return (nkColor_t) {
+        .r = color.r - gain * color.r,
+        .g = color.g - gain * color.g,
+        .b = color.b - gain * color.b,
+        .a = color.a
+    };
+}
+
 nkThickness_t nkThickness_FromConstant(float value)
 {
     return (nkThickness_t) {

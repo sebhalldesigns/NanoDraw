@@ -79,8 +79,18 @@ void nkDraw_End(nkDrawContext_t *context);
 
 void nkDraw_SetColor(nkDrawContext_t *context, nkVector4_t color);
 
+/* angle in radians, clockwise from vertical */
+void nkDraw_SetColorGradient(nkDrawContext_t *context, nkVector4_t colorStart, nkVector4_t colorEnd, float angle, float x, float y, float w, float h);
+
+void nkDraw_SetStrokeColor(nkDrawContext_t *context, nkVector4_t color);
+void nkDraw_SetStrokeColorGradient(nkDrawContext_t *context, nkVector4_t colorStart, nkVector4_t colorEnd, float angle, float x, float y, float w, float h);
+void nkDraw_SetStrokeWidth(nkDrawContext_t *context, float width);
+
+
 void nkDraw_Text(nkDrawContext_t* context, nkFont_t* font, const char* text, float x, float y);
 void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h);
+void nkDraw_RoundedRect(nkDrawContext_t* context, float x, float y, float w, float h, float radius);
+void nkDraw_RoundedRectPath(nkDrawContext_t* context, float x, float y, float w, float h, float radius);
 
 bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
 bool nkFont_LoadFromMemory(nkFont_t *font, uint8_t *data, size_t dataSize, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
