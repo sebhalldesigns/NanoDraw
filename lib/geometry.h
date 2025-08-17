@@ -88,6 +88,13 @@ typedef struct
     float left;
 } nkThickness_t;
 
+
+nkColor_t nkColor_FromHexRGB(uint32_t hex);
+nkColor_t nkColor_FromHexARGB(uint32_t hex);
+
+nkThickness_t nkThickness_FromConstant(float value);
+nkThickness_t nkThickness_FromHorizontalVertical(float horizontal, float vertical);
+
 /***************************************************************
 ** MARK: FUNCTION DEFS
 ***************************************************************/

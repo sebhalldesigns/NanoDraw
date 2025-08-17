@@ -25,6 +25,7 @@ if (WIN32)
     set(NANODRAW_SOURCES
         lib/nanodraw.c
         lib/nkfont.c
+        lib/geometry.c
         extern/glad/glad.c
         extern/nanovg/nanovg.c
     )
@@ -38,6 +39,7 @@ elseif(EMSCRIPTEN)
     set(NANODRAW_SOURCES
         lib/nanodraw.c
         lib/nkfont.c
+        lib/geometry.c
         extern/glad/glad.c
         extern/nanovg/nanovg.c
     )

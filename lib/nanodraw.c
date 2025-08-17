@@ -47,7 +47,6 @@
 extern const uint8_t NKFonts_fonts_Roboto_Regular_ttf[];
 extern const size_t NKFonts_fonts_Roboto_Regular_ttf_size;
 
-
 /***************************************************************
 ** MARK: STATIC FUNCTION DEFS
 ***************************************************************/
@@ -122,6 +121,20 @@ void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h)
     nvgBeginPath(context->nvgContext);
     nvgRect(context->nvgContext, x, y, w, h);
     nvgFill(context->nvgContext);
+}
+
+nkRect_t nkDraw_MeasureText(nkDrawContext_t* context, nkFont_t* font, const char* text)
+{
+    float bounds[4] = {0};
+    
+    nvgTextBounds(context->nvgContext, 0.0f, 0.0f, text, NULL, bounds);
+
+    return (nkRect_t) {
+        .x = bounds[0],
+        .y = bounds[1],
+        .width = bounds[2] - bounds[0],
+        .height = bounds[3] - bounds[1]
+    };
 }
 
 /***************************************************************

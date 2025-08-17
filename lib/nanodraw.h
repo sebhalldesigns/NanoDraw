@@ -85,6 +85,9 @@ void nkDraw_Rect(nkDrawContext_t* context, float x, float y, float w, float h);
 bool nkFont_Load(nkFont_t *font, const char *filename, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
 bool nkFont_LoadFromMemory(nkFont_t *font, uint8_t *data, size_t dataSize, float fontSize, uint8_t *atlas_buffer, size_t atlas_buffer_width, size_t atlas_buffer_height);
 
+/* measures text relative to origin */
+nkRect_t nkDraw_MeasureText(nkDrawContext_t* context, nkFont_t* font, const char* text); 
+
 #ifdef __cplusplus
 }
 #endif
